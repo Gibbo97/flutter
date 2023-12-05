@@ -3122,6 +3122,36 @@ void main() {
     expect(tester.getRect(find.byKey(icon0)), Rect.fromLTRB(firstItemLeft, iconTop, firstItemLeft + iconWidth, iconTop + iconHeight));
     expect(tester.getRect(find.byKey(icon1)), Rect.fromLTRB(secondItemLeft, iconTop, secondItemLeft + iconWidth, iconTop + iconHeight));
   }, skip: kIsWeb && !isCanvasKit); // https://github.com/flutter/flutter/issues/99933
+
+  testWidgetsWithLeakTracking('BottomNavigationBar keys passed through', (WidgetTester tester) async {
+    const Key key1 = Key('key1');
+    const Key key2 = Key('key2');
+    int selectedItem = 0;
+
+    await tester.pumpWidget(
+      boilerplate(
+        textDirection: TextDirection.ltr,
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: selectedItem,
+          items: const <BottomNavigationBarItem>[
+            BottomNavigationBarItem(
+              key: key1,
+              icon: Icon(Icons.favorite_border),
+              label: 'Favorite',
+            ),
+            BottomNavigationBarItem(
+              key: key2,
+              icon: Icon(Icons.access_alarm),
+              label: 'Alarm',
+            ),
+          ],
+        ),
+      ),
+    );
+
+    expect(find.byKey(key1), findsOneWidget);
+    expect(find.byKey(key2), findsOneWidget);
+  });
 }
 
 Widget boilerplate({ Widget? bottomNavigationBar, required TextDirection textDirection, bool? useMaterial3 }) {
