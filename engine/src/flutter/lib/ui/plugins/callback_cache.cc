@@ -14,6 +14,7 @@
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
 #include "third_party/tonic/converter/dart_converter.h"
+#include <os/log.h>
 
 using rapidjson::Document;
 using rapidjson::StringBuffer;
@@ -34,9 +35,13 @@ std::map<int64_t, DartCallbackRepresentation> DartCallbackCache::cache_;
 
 void DartCallbackCache::SetCachePath(const std::string& path) {
   cache_path_ = fml::paths::JoinPaths({path, kCacheName});
+  os_log_t log = os_log_create("flutter.nz.co.resolution.flutterCallbackCacheExample", "callback_cache");
+  os_log(log, "Set Cache Path: %{public}s", cache_path_.c_str());
 }
 
 Dart_Handle DartCallbackCache::GetCallback(int64_t handle) {
+  os_log_t log = os_log_create("flutter.nz.co.resolution.flutterCallbackCacheExample", "callback_cache");
+  os_log(log, "GetCallback");
   std::scoped_lock lock(mutex_);
   auto iterator = cache_.find(handle);
   if (iterator != cache_.end()) {
@@ -49,6 +54,8 @@ Dart_Handle DartCallbackCache::GetCallback(int64_t handle) {
 int64_t DartCallbackCache::GetCallbackHandle(const std::string& name,
                                              const std::string& class_name,
                                              const std::string& library_path) {
+  os_log_t log = os_log_create("flutter.nz.co.resolution.flutterCallbackCacheExample", "callback_cache");
+  os_log(log, "GetCallbackHandle: %{a}s, %{b}s, %{c}s", name.c_str(), class_name.c_str(), library_path.c_str());
   std::scoped_lock lock(mutex_);
   std::hash<std::string> hasher;
   int64_t hash = hasher(name);
@@ -64,7 +71,22 @@ int64_t DartCallbackCache::GetCallbackHandle(const std::string& name,
 
 std::unique_ptr<DartCallbackRepresentation>
 DartCallbackCache::GetCallbackInformation(int64_t handle) {
+  os_log_t log = os_log_create("flutter.nz.co.resolution.flutterCallbackCacheExample", "callback_cache");
+  os_log(log, "GetCallbackInformation: %lld", handle);
+
   std::scoped_lock lock(mutex_);
+    
+  // Print entire cache contents
+  os_log(log, "=== Cache Contents (size: %zu) at path (path: %s) ===", cache_.size(), cache_path_.c_str());
+  for (const auto& entry : cache_) {
+      os_log(log, "  Handle: %lld -> name: %{public}s, class: %{public}s, library: %{public}s",
+              entry.first,
+              entry.second.name.c_str(),
+              entry.second.class_name.c_str(),
+              entry.second.library_path.c_str());
+  }
+  os_log(log, "=== End Cache Contents ===");
+    
   auto iterator = cache_.find(handle);
   if (iterator != cache_.end()) {
     return std::make_unique<DartCallbackRepresentation>(iterator->second);
@@ -73,6 +95,8 @@ DartCallbackCache::GetCallbackInformation(int64_t handle) {
 }
 
 void DartCallbackCache::SaveCacheToDisk() {
+    os_log_t log = os_log_create("flutter.nz.co.resolution.flutterCallbackCacheExample", "callback_cache");
+    os_log(log, "SaveCacheToDisk");
   // Cache JSON format
   // [
   //   {
@@ -115,6 +139,9 @@ void DartCallbackCache::SaveCacheToDisk() {
 }
 
 void DartCallbackCache::LoadCacheFromDisk() {
+  os_log_t log = os_log_create("flutter.nz.co.resolution.flutterCallbackCacheExample", "callback_cache");
+  os_log(log, "LoadCacheFromDisk");
+
   std::scoped_lock lock(mutex_);
 
   // Don't reload the cache if it's already populated.
@@ -148,9 +175,12 @@ void DartCallbackCache::LoadCacheFromDisk() {
 }
 
 Dart_Handle DartCallbackCache::LookupDartClosure(
-    const std::string& name,
-    const std::string& class_name,
-    const std::string& library_path) {
+  const std::string& name,
+  const std::string& class_name,
+  const std::string& library_path) {
+  os_log_t log = os_log_create("flutter.nz.co.resolution.flutterCallbackCacheExample", "callback_cache");
+  os_log(log, "LookupDartClosure: %{a}s, %{b}s, %{c}s", name.c_str(), class_name.c_str(), library_path.c_str());
+    
   Dart_Handle closure_name = ToDart(name);
   if (Dart_IsError(closure_name)) {
     return closure_name;

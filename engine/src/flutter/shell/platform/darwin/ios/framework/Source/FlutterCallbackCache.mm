@@ -6,6 +6,7 @@
 
 #include "flutter/fml/logging.h"
 #include "flutter/lib/ui/plugins/callback_cache.h"
+#import <os/log.h>
 
 FLUTTER_ASSERT_ARC
 
@@ -15,6 +16,10 @@ FLUTTER_ASSERT_ARC
 @implementation FlutterCallbackCache
 
 + (FlutterCallbackInformation*)lookupCallbackInformation:(int64_t)handle {
+  NSString* cache_path =
+      [NSString stringWithUTF8String:flutter::DartCallbackCache::GetCachePath().c_str()];
+  os_log_t logger = os_log_create("flutter.nz.co.resolution.flutterCallbackCacheExample", "NotificationPreSync");
+  os_log(logger, "FlutterCallbackCache path: %{public}@", cache_path);
   auto info = flutter::DartCallbackCache::GetCallbackInformation(handle);
   if (info == nullptr) {
     return nil;
@@ -44,6 +49,10 @@ FLUTTER_ASSERT_ARC
       NSLog(@"Error excluding %@ from backup %@", [URL lastPathComponent], error);
     }
   }
+}
+
++ (void)loadCacheFromDisk {
+  flutter::DartCallbackCache::LoadCacheFromDisk();
 }
 
 @end

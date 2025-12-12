@@ -13,8 +13,6 @@
 
 FLUTTER_ASSERT_ARC
 
-static const char* kCallbackCacheSubDir = "Library/Caches/";
-
 static const SEL kSelectorsHandledByPlugins[] = {
     @selector(application:didReceiveRemoteNotification:fetchCompletionHandler:),
     @selector(application:performFetchWithCompletionHandler:)};
@@ -48,8 +46,28 @@ static const SEL kSelectorsHandledByPlugins[] = {
 
 - (instancetype)init {
   if (self = [super init]) {
-    std::string cachePath = fml::paths::JoinPaths({getenv("HOME"), kCallbackCacheSubDir});
-    [FlutterCallbackCache setCachePath:[NSString stringWithUTF8String:cachePath.c_str()]];
+    NSString* cachePath;
+      
+    NSString* appGroupIdentifier = [[NSBundle mainBundle]
+        objectForInfoDictionaryKey:@"FlutterAppGroupIdentifier"];
+      
+            
+    NSURL* groupURL = [[NSFileManager defaultManager]
+        containerURLForSecurityApplicationGroupIdentifier:appGroupIdentifier];
+      
+      
+    NSURL* cacheURL = [groupURL URLByAppendingPathComponent:@"Library/Caches"];
+    [[NSFileManager defaultManager] createDirectoryAtURL:cacheURL
+                            withIntermediateDirectories:YES
+                                                attributes:nil
+                                                    error:nil];
+
+    cachePath = [cacheURL path];
+
+    NSLog(@"flutter.nz.co.resolution.flutterCallbackCacheExample init - cachePath: %@", cachePath);
+
+    [FlutterCallbackCache setCachePath:cachePath];
+
     if (FlutterSharedApplication.isAvailable) {
       [self addObserverFor:UIApplicationDidEnterBackgroundNotification
                   selector:@selector(handleDidEnterBackground:)];

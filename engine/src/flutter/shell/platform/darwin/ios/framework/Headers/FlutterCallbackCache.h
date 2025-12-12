@@ -36,6 +36,23 @@ FLUTTER_DARWIN_EXPORT
 FLUTTER_DARWIN_EXPORT
 @interface FlutterCallbackCache : NSObject
 /**
+ * Sets the path to the cache file.
+ * This should be called before `loadCacheFromDisk`. The path should point to
+ * a shared App Group container if you need to access the cache from app extensions.
+ *
+ * @param path The file system path where the callback cache should be stored.
+ */
++ (void)setCachePath:(NSString*)path;
+
+/**
+ * Loads the callback cache from disk.
+ * This should be called after `setCachePath:` to populate the in-memory cache
+ * from the persistent cache file. This is useful in app extensions where the
+ * normal app lifecycle initialization does not occur.
+ */
++ (void)loadCacheFromDisk;
+
+/**
  * Returns the callback information for the given callback handle.
  * This callback information can be used when spawning a
  * `FlutterHeadlessDartRunner`.
