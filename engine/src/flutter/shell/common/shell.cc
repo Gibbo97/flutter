@@ -783,30 +783,24 @@ void Shell::RunEngine(
   FML_DCHECK(is_set_up_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
-  FML_LOG(INFO) << "Shell::RunEngine - posting task to UI runner";
-
   fml::TaskRunner::RunNowOrPostTask(
       task_runners_.GetUITaskRunner(),
       fml::MakeCopyable(
           [run_configuration = std::move(run_configuration),
            weak_engine = weak_engine_, result]() mutable {
-            FML_LOG(INFO) << "Shell::RunEngine - UI task executing";
             if (!weak_engine) {
               FML_LOG(ERROR)
                   << "Could not launch engine with configuration - no engine.";
               result(Engine::RunStatus::Failure);
               return;
             }
-            FML_LOG(INFO) << "Shell::RunEngine - calling Engine::Run";
             auto run_result = weak_engine->Run(std::move(run_configuration));
-            FML_LOG(INFO) << "Shell::RunEngine - Engine::Run returned: " << static_cast<int>(run_result);
             if (run_result == flutter::Engine::RunStatus::Failure) {
               FML_LOG(ERROR) << "Could not launch engine with configuration.";
             }
 
             result(run_result);
           }));
-  FML_LOG(INFO) << "Shell::RunEngine - task posted, returning";
 }
 
 std::optional<DartErrorCode> Shell::GetUIIsolateLastError() const {

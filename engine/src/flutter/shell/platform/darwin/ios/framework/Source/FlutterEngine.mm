@@ -43,7 +43,6 @@
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 #import "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
 #include "flutter/shell/profiling/sampling_profiler.h"
-#include <os/log.h>
 
 FLUTTER_ASSERT_ARC
 
@@ -241,7 +240,6 @@ NSString* const kFlutterApplicationRegistrarKey = @"io.flutter.flutter.applicati
 
   _enableEmbedderAPI = _dartProject.settings.enable_embedder_api;
   if (_enableEmbedderAPI) {
-    NSLog(@"============== iOS: enable_embedder_api is on ==============");
     _embedderAPI.struct_size = sizeof(FlutterEngineProcTable);
     FlutterEngineGetProcAddresses(&_embedderAPI);
   }
@@ -768,29 +766,13 @@ NSString* const kFlutterApplicationRegistrarKey = @"io.flutter.flutter.applicati
           libraryURI:(NSString*)libraryOrNil
       entrypointArgs:(NSArray<NSString*>*)entrypointArgs {
   // Launch the Dart application with the inferred run configuration.
-  os_log_t log = os_log_create("flutter.nz.co.resolution.flutterCallbackCacheExample", "FlutterEngine");
-  os_log(log, "launchEngine: entrypoint=%{public}@, libraryURI=%{public}@", entrypoint ?: @"nil", libraryOrNil ?: @"nil");
-
   flutter::RunConfiguration configuration =
       [self.dartProject runConfigurationForEntrypoint:entrypoint
                                          libraryOrNil:libraryOrNil
                                        entrypointArgs:entrypointArgs];
 
-  os_log(log, "launchEngine: configuration valid=%{public}d", configuration.IsValid());
-  os_log(log, "launchEngine: entrypoint from config=%{public}s", configuration.GetEntrypoint().c_str());
-
-  // Log settings paths
-  auto& settings = [self.dartProject settings];
-  os_log(log, "launchEngine: assets_path=%{public}s", settings.assets_path.c_str());
-  os_log(log, "launchEngine: application_library_paths count=%{public}zu", settings.application_library_paths.size());
-  for (const auto& path : settings.application_library_paths) {
-    os_log(log, "launchEngine: application_library_path=%{public}s", path.c_str());
-  }
-
   configuration.SetEngineId(self.engineIdentifier);
-  os_log(log, "launchEngine: calling RunEngine...");
   self.shell.RunEngine(std::move(configuration));
-  os_log(log, "launchEngine: RunEngine returned");
 }
 
 - (void)setUpShell:(std::unique_ptr<flutter::Shell>)shell
@@ -917,35 +899,20 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer =
       [](flutter::Shell& shell) { return std::make_unique<flutter::Rasterizer>(shell); };
 
-  os_log_t createLog = os_log_create("flutter.nz.co.resolution.flutterCallbackCacheExample", "FlutterEngine");
-  os_log(createLog, "createShell: enable_impeller=%{public}d, merged_platform_ui_thread=%{public}d, allowHeadlessExecution=%{public}d",
-         settings.enable_impeller,
-         static_cast<int>(settings.merged_platform_ui_thread),
-         self.allowHeadlessExecution);
-
   fml::RefPtr<fml::TaskRunner> ui_runner;
   // For headless execution (like notification extensions), we CANNOT use merged platform/UI thread
   // because the platform's CFRunLoop is not being actively pumped.
   // Force separate UI thread for headless mode.
-  bool useMergedThread = settings.enable_impeller &&
+  bool useMergedThread =
+      settings.enable_impeller &&
       settings.merged_platform_ui_thread == flutter::Settings::MergedPlatformUIThread::kEnabled &&
-      !self.allowHeadlessExecution;  // <-- Disable merged thread for headless
+      !self.allowHeadlessExecution;
 
   if (useMergedThread) {
-    os_log(createLog, "createShell: using MERGED platform/UI thread");
     ui_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
   } else {
-    os_log(createLog, "createShell: using SEPARATE UI thread (headless=%{public}d)", self.allowHeadlessExecution);
     ui_runner = _threadHost->ui_thread->GetTaskRunner();
   }
-
-  // Test if UI runner processes tasks
-  os_log(createLog, "createShell: posting test task to UI runner...");
-  ui_runner->PostTask([]() {
-    os_log_t testLog = os_log_create("flutter.nz.co.resolution.flutterCallbackCacheExample", "FlutterEngine");
-    os_log(testLog, "createShell: UI RUNNER TEST TASK EXECUTED!");
-  });
-  os_log(createLog, "createShell: test task posted");
 
   flutter::TaskRunners task_runners(threadLabel.UTF8String,                          // label
                                     fml::MessageLoop::GetCurrent().GetTaskRunner(),  // platform

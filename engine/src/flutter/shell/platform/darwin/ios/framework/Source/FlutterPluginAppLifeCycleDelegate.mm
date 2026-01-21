@@ -47,24 +47,20 @@ static const SEL kSelectorsHandledByPlugins[] = {
 - (instancetype)init {
   if (self = [super init]) {
     NSString* cachePath;
-      
-    NSString* appGroupIdentifier = [[NSBundle mainBundle]
-        objectForInfoDictionaryKey:@"FlutterAppGroupIdentifier"];
-      
-            
+
+    NSString* appGroupIdentifier =
+        [[NSBundle mainBundle] objectForInfoDictionaryKey:@"FlutterAppGroupIdentifier"];
+
     NSURL* groupURL = [[NSFileManager defaultManager]
         containerURLForSecurityApplicationGroupIdentifier:appGroupIdentifier];
-      
-      
+
     NSURL* cacheURL = [groupURL URLByAppendingPathComponent:@"Library/Caches"];
     [[NSFileManager defaultManager] createDirectoryAtURL:cacheURL
-                            withIntermediateDirectories:YES
-                                                attributes:nil
-                                                    error:nil];
+                             withIntermediateDirectories:YES
+                                              attributes:nil
+                                                   error:nil];
 
     cachePath = [cacheURL path];
-
-    NSLog(@"flutter.nz.co.resolution.flutterCallbackCacheExample init - cachePath: %@", cachePath);
 
     [FlutterCallbackCache setCachePath:cachePath];
 
