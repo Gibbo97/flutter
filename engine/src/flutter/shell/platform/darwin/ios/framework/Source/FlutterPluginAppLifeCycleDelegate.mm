@@ -13,6 +13,8 @@
 
 FLUTTER_ASSERT_ARC
 
+static const char* kCallbackCacheSubDir = "Library/Caches/";
+
 static const SEL kSelectorsHandledByPlugins[] = {
     @selector(application:didReceiveRemoteNotification:fetchCompletionHandler:),
     @selector(application:performFetchWithCompletionHandler:)};
@@ -54,13 +56,19 @@ static const SEL kSelectorsHandledByPlugins[] = {
     NSURL* groupURL = [[NSFileManager defaultManager]
         containerURLForSecurityApplicationGroupIdentifier:appGroupIdentifier];
 
-    NSURL* cacheURL = [groupURL URLByAppendingPathComponent:@"Library/Caches"];
-    [[NSFileManager defaultManager] createDirectoryAtURL:cacheURL
-                             withIntermediateDirectories:YES
-                                              attributes:nil
-                                                   error:nil];
-
-    cachePath = [cacheURL path];
+    if (groupURL) {
+      // Use App Group shared container for callback cache (enables app extension access)
+      NSURL* cacheURL = [groupURL URLByAppendingPathComponent:@"Library/Caches"];
+      [[NSFileManager defaultManager] createDirectoryAtURL:cacheURL
+                               withIntermediateDirectories:YES
+                                                attributes:nil
+                                                     error:nil];
+      cachePath = [cacheURL path];
+    } else {
+      // Fallback to HOME directory if no App Group configured
+      std::string fallbackPath = fml::paths::JoinPaths({getenv("HOME"), kCallbackCacheSubDir});
+      cachePath = [NSString stringWithUTF8String:fallbackPath.c_str()];
+    }
 
     [FlutterCallbackCache setCachePath:cachePath];
 
